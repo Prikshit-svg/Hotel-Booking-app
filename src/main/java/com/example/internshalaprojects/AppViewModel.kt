@@ -50,6 +50,12 @@ private val _user=MutableStateFlow<FirebaseUser?>(null)
 
     private val _phoneNumber=MutableStateFlow<String?>(null)
     val phoneNumber: StateFlow<String?> get() =_phoneNumber
+private val _isLoading = MutableStateFlow<Boolean>(false)
+    val isLoading : StateFlow<Boolean> get() = _isLoading
+
+    fun setIsLoading(value: Boolean) {
+        _isLoading.value = value
+    }
 
     private val _verificationId = MutableStateFlow<String>("")
     val verificationId: StateFlow<String> get() =_verificationId.asStateFlow()
