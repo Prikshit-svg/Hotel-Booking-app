@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "448526694612",
+    "project_id": "hotel-booker-app",
+    "storage_bucket": "hotel-booker-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:448526694612:android:9a8e9e12cf408d004da341",
+        "android_client_info": {
+          "package_name": "com.example.internshalaprojects"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjp1FJOpTHjmTTVeka9jQ9HD5WFRlo6e8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
