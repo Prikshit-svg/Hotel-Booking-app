@@ -1,9 +1,11 @@
 package com.example.internshalaprojects.otpScreens
 
 import android.app.Activity
+
 import android.content.ContentValues.TAG
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
@@ -48,6 +51,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -69,13 +73,17 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun verifyOTPScreen(appViewModel : AppViewModel,auth : FirebaseAuth
                     ){
-    var timer = appViewModel.timer
+    val timer by appViewModel.timer.collectAsState()
     val context= LocalContext.current
 val otp by appViewModel.otp.collectAsState()
     val verificationId by appViewModel.verificationId.collectAsState()
     val loading by appViewModel.isLoading.collectAsState()
     val phoneNumber by appViewModel.phoneNumber.collectAsState()
-    LaunchedEffect(appViewModel.timer) {
+    val logout  by appViewModel.logout.collectAsState()
+
+
+    LaunchedEffect(1) {
+        appViewModel.setIsLoading(false)
         appViewModel.runTimer()
     }
     Box {
@@ -111,12 +119,15 @@ val otp by appViewModel.otp.collectAsState()
                 )
                 TextButton(
                     onClick = {
-
+                        if (verificationId.isNullOrBlank()) {
+                            Toast.makeText(context, "Could not verify OTP. Please try again.", Toast.LENGTH_LONG).show()
+                            return@TextButton // Exit the onClick lambda immediately
+                        }
                         if (otp.isEmpty()) {
                             Toast.makeText(context, "Enter OTP", Toast.LENGTH_SHORT).show()
                         } else {
                             val credential = PhoneAuthProvider.getCredential(verificationId!!, otp)
-                            appViewModel.signInWithPhoneAuthCredential(credential, auth, context)
+                            appViewModel.signInWithPhoneAuthCredential(credential, auth, context as Activity)
                             Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
                         }
 
@@ -130,7 +141,47 @@ val otp by appViewModel.otp.collectAsState()
                 }
                 Spacer(Modifier.padding(10.dp))
                 TextButton(
-                    onClick = {}, modifier = Modifier
+                    onClick = {
+                        if (timer == 0) {
+
+
+                            val callbacks = object :
+                                PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+
+                                override fun onVerificationCompleted(credential : PhoneAuthCredential) {
+
+                                }
+
+                                override fun onVerificationFailed(e : FirebaseException) {
+
+                                }
+
+                                override fun onCodeSent(
+                                    verificationId : String,
+                                    token : PhoneAuthProvider.ForceResendingToken,
+                                ) {
+                                    Toast.makeText(context, "Success", Toast.LENGTH_SHORT)
+                                        .show()
+                                    appViewModel.setVerificationId(verificationId)
+                                }
+                            }
+                            val options = newBuilder(auth)
+                                .setPhoneNumber("91${phoneNumber}") // Phone number to verify
+                                .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
+                                .setActivity(context as Activity) // Activity (for callback binding)
+                                .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
+                                .build()
+                            PhoneAuthProvider.verifyPhoneNumber(options)
+                            appViewModel.runTimer()
+
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Wait for $timer seconds",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }, modifier = Modifier
                         .padding(start = 30.dp, end = 30.dp, top = 10.dp)
                         .fillMaxWidth()
                         .background(Color.Cyan)
@@ -139,68 +190,39 @@ val otp by appViewModel.otp.collectAsState()
                     Text(
                         text = if (timer > 0) "Resend OTP 00:$timer"
                         else "Resend OTP",
-                        modifier = Modifier.clickable {
-                            if (timer == 0) {
-
-
-                                val callbacks = object :
-                                    PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-
-                                    override fun onVerificationCompleted(credential : PhoneAuthCredential) {
-
-                                    }
-
-                                    override fun onVerificationFailed(e : FirebaseException) {
-
-                                    }
-
-                                    override fun onCodeSent(
-                                        verificationId : String,
-                                        token : PhoneAuthProvider.ForceResendingToken,
-                                    ) {
-                                        Toast.makeText(context, "Success", Toast.LENGTH_SHORT)
-                                            .show()
-                                        appViewModel.setVerificationId(verificationId)
-                                    }
-                                }
-                                val options = newBuilder(auth)
-                                    .setPhoneNumber("91${phoneNumber}") // Phone number to verify
-                                    .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
-                                    .setActivity(context as Activity) // Activity (for callback binding)
-                                    .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
-                                    .build()
-                                PhoneAuthProvider.verifyPhoneNumber(options)
-                                appViewModel.runTimer()
-
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "Wait for $timer seconds",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        })
+                       )
                 }
             }
 
         }
         IconButton(onClick = {
-            appViewModel.setVerificationId("")
-            appViewModel.saveOtp("")
+            // This should eventually be navController.popBackStack()
+            // For now, leave it empty to prevent the state-clearing bug.
 
         }) {
             Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
         }
+        IconButton(onClick={
+            appViewModel.setLogout(true)
+        }, modifier = Modifier.align(Alignment.TopEnd)) {
+            Image(painterResource(R.drawable.logout), contentDescription = "logout")
+        }
+        if(loading){
+            Column(Modifier.fillMaxSize()
+                .background(Color(255,255,255,50)),
+                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
 
+                CircularProgressIndicator()
+
+            }
     }
-    if(loading){
-      Column(Modifier.fillMaxSize()
-.background(Color(255,255,255,50)),
-          verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        if (logout){
+            AlertDialogBox(noButton = { appViewModel.setLogout(false) }, yesButton ={
+                auth.signOut()
+                appViewModel.clearUser()
+            appViewModel.setLogout(false)})
+        }
 
-          CircularProgressIndicator()
-
-      }
     }
 
 
@@ -232,10 +254,11 @@ fun otpInput(
                             )
                         )
                     }
-                }, modifier = Modifier
+                }, modifier = Modifier.padding(5.dp)
                     .focusRequester(focusRequester[i])
                     .width(50.dp)
-                    .height(50.dp),
+                    .height(50.dp)
+                    ,
                 singleLine = true,
                 textStyle = LocalTextStyle.current.copy(
                     textAlign = TextAlign.Center,
@@ -251,6 +274,28 @@ fun otpInput(
 }
 
 
+@Composable
+fun AlertDialogBox(noButton: () -> Unit, yesButton: () -> Unit){
+    AlertDialog(
+title={Text("Logout?")},
+        containerColor = Color.White,
+text={Text("Are you sure you want to log out")}
+        ,
+        confirmButton =
+            {TextButton(onClick ={ yesButton()}) {
+                Text("Yes")
+
+            }
+        }
+        ,
+        dismissButton = {
+            TextButton(onClick = {noButton()}) {
+                Text("No")
+            }},
+        onDismissRequest = {noButton()}
+
+    )
+}
 @Preview
 @Composable
 fun verifyOTPScreenPreview(){

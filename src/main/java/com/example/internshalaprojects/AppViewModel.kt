@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,16 +39,27 @@ class AppViewModel : ViewModel() {
 
     private val _isVisible=MutableStateFlow(true)
     val isVisible: StateFlow<Boolean> =_isVisible.asStateFlow()
-var _itemUiState: ItemUiState by mutableStateOf(ItemUiState.Loading)
-    private set
-    var userAsks=mutableStateOf(false)
+    private val _itemUiState = MutableStateFlow<ItemUiState>(ItemUiState.Loading)
+    val itemUiState: StateFlow<ItemUiState> = _itemUiState.asStateFlow()
+
+    // For userAsks
+    private val _userAsks = MutableStateFlow(false)
+    val userAsks: StateFlow<Boolean> = _userAsks.asStateFlow()
+
+    // For timer
+    private val _timer = MutableStateFlow(60)
+    val timer: StateFlow<Int> = _timer.asStateFlow()
 
     //val Context.dataStore : DataStore<Preferences> by preferencesDataStore("user_preferences")
 
 
 private val _user=MutableStateFlow<FirebaseUser?>(null)
     val user: StateFlow<FirebaseUser?> get() =_user
-
+private val _logout= MutableStateFlow<Boolean>(false)
+    val logout: StateFlow<Boolean> get() =_logout
+    fun setLogout(value: Boolean) {
+        _logout.value = value
+    }
     private val _phoneNumber=MutableStateFlow<String?>(null)
     val phoneNumber: StateFlow<String?> get() =_phoneNumber
 private val _isLoading = MutableStateFlow<Boolean>(false)
@@ -63,7 +75,7 @@ private val _isLoading = MutableStateFlow<Boolean>(false)
     fun setVerificationId(verificationId: String) {
         _verificationId.value = verificationId
     }
-    var timer by mutableStateOf(60)
+
 private val _otp=MutableStateFlow<String>("")
     val otp: StateFlow<String> get() =_otp
 
@@ -78,7 +90,7 @@ private val _otp=MutableStateFlow<String>("")
 
 
     fun redirectToOfficialWebsite(){
-        userAsks.value=true
+        _userAsks.value=true
     }
     fun removeOffer(){
         _isVisible.value=false
@@ -101,20 +113,19 @@ private val _otp=MutableStateFlow<String>("")
     }
     fun runTimer(){
         viewModelScope.launch {
-timer=60
-
-            while (timer > 0) {
+            _timer.value = 60 // Reset the timer by updating its .value
+            while (_timer.value > 0) {
                 delay(1000)
-                timer--
+                _timer.value-- // Decrement the .value
             }
         }
-
     }
     fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential,auth : FirebaseAuth,context : Context) {
         auth.signInWithCredential(credential)
             .addOnCompleteListener(context as Activity) { task ->
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
+                    Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show()
                     Log.d(TAG, "signInWithCredential:success")
 
                     val user = task.result?.user
@@ -126,6 +137,7 @@ timer=60
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
                     if (task.exception is FirebaseAuthInvalidCredentialsException) {
                         // The verification code entered was invalid
+                        Toast.makeText(context,"the otp you have entered is invalid. Please try again", Toast.LENGTH_SHORT).show()
                     }
                     // Update UI
                 }
@@ -135,19 +147,19 @@ timer=60
 
     // In AppViewModel.kt
     fun getHotelItems() {
-        internetJob = viewModelScope.launch {
+         viewModelScope.launch {
             // It's good practice to set a Loading state first
-            _itemUiState = ItemUiState.Loading
+            _itemUiState.value = ItemUiState.Loading
             try {
                 // Now, the network call is safely wrapped
                 val listResult = HotelApi.retrofitservice.getItems()
-                _itemUiState = ItemUiState.Success(listResult)
+                _itemUiState.value = ItemUiState.Success(listResult)
 
             } catch (e: Exception) {
                 // If the network call fails for ANY reason, this block will be executed
                 // Log the error to see it in Logcat during debugging
                 Log.e("AppViewModel", "Failed to fetch hotel items: ${e.message}")
-                _itemUiState = ItemUiState.Error
+                _itemUiState.value = ItemUiState.Error
             }
         }
     }

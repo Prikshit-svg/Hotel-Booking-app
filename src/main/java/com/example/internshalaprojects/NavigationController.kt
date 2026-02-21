@@ -1,6 +1,7 @@
 package com.example.internshalaprojects
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +20,17 @@ fun NavHostController(appViewModel : AppViewModel){
     val navController =rememberNavController()
     val context=LocalContext.current
     auth.currentUser?.let {  (appViewModel.setUser(it))}
+    LaunchedEffect(user) {
+        if (user != null) {
+            // If the user logs in successfully, navigate to the home screen.
+            // We also clear the back stack so the user can't go back to the OTP screens.
+            navController.navigate("home") {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
+        }
+    }
     NavHost(startDestination = "home", navController = navController){
         composable("home"){
             appViewModel.setScreenTitle("Home")

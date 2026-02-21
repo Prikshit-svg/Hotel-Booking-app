@@ -25,6 +25,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.runtime.collectAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -321,7 +322,9 @@ fun FindRoomScreenContent(
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            InternetItemScreen(appViewModel, appViewModel._itemUiState)
+            InternetItemScreen(appViewModel,
+                appViewModel.itemUiState.collectAsState() as AppViewModel.ItemUiState
+            )
         }
     }
 }
@@ -446,6 +449,8 @@ fun BottomNavigationBar(navController : NavController) {
 fun FindRoomScreenPreview() {
     val  appViewModel: AppViewModel = viewModel()
     FindRoomScreenContent(navController = rememberNavController(),appViewModel)
-    InternetItemScreen(appViewModel, appViewModel._itemUiState)
+    InternetItemScreen(appViewModel,
+        appViewModel.itemUiState.collectAsState() as AppViewModel.ItemUiState
+    )
 
 }
