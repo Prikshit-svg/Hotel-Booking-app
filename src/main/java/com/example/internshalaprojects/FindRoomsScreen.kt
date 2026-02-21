@@ -6,12 +6,50 @@ import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -22,16 +60,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FindRoomScreen(appViewModel : AppViewModel,
-                   navController : NavController) {
-
-        FindRoomScreenContent(navController = navController, appViewModel)
+                   navController : NavController,
+                   auth : FirebaseAuth,
+                   onClick : () -> Unit) {
+val itemUiState by appViewModel.itemUiState.collectAsState()
+        FindRoomScreenContent(navController = navController,
+            appViewModel,
+            itemUiState,
+            auth,
+            onClick)
 
 
 }
@@ -40,12 +85,19 @@ fun FindRoomScreen(appViewModel : AppViewModel,
 @Composable
 fun FindRoomScreenContent(
     navController: NavController,
-    appViewModel : AppViewModel
+    appViewModel : AppViewModel,
+    itemUiState: AppViewModel.ItemUiState,
+    auth : FirebaseAuth,
+    onClick :()->Unit
 ) {
 
     val context = LocalContext.current
 
-    val cityList = listOf(appViewModel.getHotelItems())
+    val cityList = if (itemUiState is AppViewModel.ItemUiState.Success){
+itemUiState.items.map { it.name }.distinct()
+    }else{
+        emptyList()
+    }
 
     var selectedCity by remember { mutableStateOf("Bengaluru") }
     var expanded by remember { mutableStateOf(false) }
@@ -53,7 +105,7 @@ fun FindRoomScreenContent(
     var checkInDate by remember { mutableStateOf("18/12/2023") }
     var checkOutDate by remember { mutableStateOf("20/12/2023") }
 
-    var rooms by remember { mutableStateOf(2) }
+    var rooms by remember { mutableIntStateOf(2) }
     var showRoomDialog by remember { mutableStateOf(false) }
 
     val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
@@ -74,6 +126,14 @@ fun FindRoomScreenContent(
     }
 
     Scaffold(
+        topBar = {
+            TopAppBar(title = {
+                TopAppBar(appViewModel, onClick = {
+                    auth.signOut()
+                    appViewModel.clearUser(onClick)
+                })
+            })
+        },
         bottomBar = {
             BottomNavigationBar(navController)
         }
@@ -86,39 +146,7 @@ fun FindRoomScreenContent(
                 .background(Color(0xFFF8FAFC))
         ) {
 
-            // Top Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
 
-                Text(
-                    text = "Find Room",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    Text(
-                        text = "Logout",
-                        modifier = Modifier.clickable {
-                            // UI only, no backend logic
-                            Toast.makeText(context, "Logout clicked", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
-            }
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -154,7 +182,7 @@ fun FindRoomScreenContent(
                             color = Color.Gray
                         )
                         Text(
-                            text = if (selectedCity.isEmpty()) "" else selectedCity,
+                            text = selectedCity.ifEmpty { "" },
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
@@ -166,7 +194,7 @@ fun FindRoomScreenContent(
                     )
                 }
 
-                Divider()
+                HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
                 DropdownMenu(
                     expanded = expanded,
@@ -175,9 +203,9 @@ fun FindRoomScreenContent(
                 ) {
                     cityList.forEach { city ->
                         DropdownMenuItem(
-                            text = { Text(city.toString()) },
+                            text = { Text(city) },
                             onClick = {
-                                selectedCity = city.toString()
+                                selectedCity = city
                                 expanded = false
                             }
                         )
@@ -218,7 +246,7 @@ fun FindRoomScreenContent(
                     }
                 }
 
-                Divider()
+                HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
                 // Checkout Date
                 Row(
@@ -254,7 +282,7 @@ fun FindRoomScreenContent(
                     }
                 }
 
-                Divider()
+                HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
                 // Number of Rooms
                 Row(
@@ -321,7 +349,9 @@ fun FindRoomScreenContent(
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            InternetItemScreen(appViewModel, appViewModel._itemUiState)
+            InternetItemScreen(appViewModel,
+                itemUiState
+            )
         }
     }
 }
@@ -332,7 +362,7 @@ fun RoomSelectorDialog(
     onDismiss: () -> Unit,
     onRoomsChange: (Int) -> Unit
 ) {
-    var tempRooms by remember { mutableStateOf(rooms) }
+    var tempRooms by remember { mutableIntStateOf(rooms) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -355,7 +385,7 @@ fun RoomSelectorDialog(
                 IconButton(onClick = {
                     if (tempRooms > 1) tempRooms--
                 }) {
-                    Icon(Icons.Default.KeyboardArrowLeft, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
                 }
 
                 Text(
@@ -367,7 +397,7 @@ fun RoomSelectorDialog(
                 IconButton(onClick = {
                     if (tempRooms < 10) tempRooms++
                 }) {
-                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
                 }
             }
         },
@@ -445,7 +475,9 @@ fun BottomNavigationBar(navController : NavController) {
 @Composable
 fun FindRoomScreenPreview() {
     val  appViewModel: AppViewModel = viewModel()
-    FindRoomScreenContent(navController = rememberNavController(),appViewModel)
-    InternetItemScreen(appViewModel, appViewModel._itemUiState)
+   // FindRoomScreenContent(navController = rememberNavController(),appViewModel)
+    InternetItemScreen(appViewModel,
+        appViewModel.itemUiState.collectAsState() as AppViewModel.ItemUiState
+    )
 
 }

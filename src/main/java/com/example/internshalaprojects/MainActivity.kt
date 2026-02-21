@@ -2,9 +2,10 @@ package com.example.internshalaprojects
 
 import android.content.Context
 import android.content.Intent
-
 import android.net.Uri
 import android.os.Bundle
+import com.google.android.gms.auth.api.identity.Identity
+import android.provider.ContactsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,23 +27,18 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
-
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ShapeDefaults
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -52,17 +48,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.internshalaprojects.data.Hotel
 import com.example.internshalaprojects.data.ListOfHotels
+import com.example.internshalaprojects.otpScreens.sendOTPScreen
 import com.example.internshalaprojects.otpScreens.sendOTPScreen
 import com.example.internshalaprojects.ui.theme.InternshalaProjectsTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import kotlin.getValue
 
 
 class MainActivity : ComponentActivity() {
+    /*  private val googleAuthUiClient by lazy {
+        GoogleAuthUiClient(
+             context = applicationContext,
+             oneTapClient = Identity.getSignInClient(applicationContext)
+         )
+     }*/
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState : Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,8 +84,8 @@ NavHostController(appViewModel)
 }
 
 @Composable
-fun FAQScreen(viewModel : GameViewModel) {
-    val context= LocalContext.current
+fun FAQScreen() {
+    LocalContext.current
 
     }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +94,7 @@ fun HomeScreen(
     appViewModel: AppViewModel,
     onCLick : () -> Unit,
 navController : NavController,
+
     auth : FirebaseAuth,
     user : FirebaseUser?,
     context: Context
@@ -109,7 +112,7 @@ val visible=appViewModel.isVisible.collectAsState()
             topBar = {
                 TopAppBar(title = { TopAppBar(appViewModel,onClick={
                     auth.signOut()
-appViewModel.clearUser()
+appViewModel.clearUser(onCLick)
                 }) })
             },
             bottomBar = {
@@ -131,7 +134,7 @@ appViewModel.clearUser()
                                )
                             Card(modifier = Modifier.fillMaxWidth(),
                                 colors= CardDefaults.cardColors(
-                                    containerColor = androidx.compose.ui.graphics.Color(108,194,111,255)
+                                    containerColor = Color(108,194,111,255)
                                 )) {
 Text(text="Show by category",
     modifier = Modifier.padding(horizontal = 10.dp),
@@ -144,14 +147,10 @@ Text(text="Show by category",
                     }
                     items(ListOfHotels().size) { hotel ->
                         HotelCard(ListOfHotels()[hotel], {
+                               val intent =
+                                   Intent(Intent.ACTION_VIEW, Uri.parse(ListOfHotels()[hotel].link))
+                               context.startActivity(intent)
 
-                           //if (appViewModel.userAsks.value) {
-                               //val intent =
-                                 //  Intent(Intent.ACTION_VIEW, Uri.parse(ListOfHotels()[hotel].link))
-                              // context.startActivity(intent)
-                           //}else{
-                              onCLick()
-                           //}
                         })
                     }
                 }
@@ -168,7 +167,7 @@ fun HotelCard(hotel : Hotel,onCLick :()->Unit){
           onCLick()
     },modifier=Modifier.padding(4.dp),
         colors= CardDefaults.cardColors(
-containerColor = androidx.compose.ui.graphics.Color(248,221,248,255)
+containerColor = Color(248,221,248,255)
         )) {
         Column(modifier = Modifier.fillMaxSize()) {
             Image(painterResource(hotel.image), contentDescription = hotel.name,

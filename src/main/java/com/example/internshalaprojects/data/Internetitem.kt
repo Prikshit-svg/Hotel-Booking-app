@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Internetitem(
     @SerialName("desc")
-    val desc:String,
+    val desc:String="",
     @SerialName("image")
-    val image: String,
+    val image: String="",
     @SerialName("name")
-    val name: String
+    val name: String=""
 )
