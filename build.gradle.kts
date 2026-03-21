@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -27,11 +29,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField(
-            "String",
-            "FOURSQUARE_API_KEY",
-            "\"${project.findProperty("YFMPQ1QXB1BKWA5PA1Q5NEILP1IO5EYYXRXPM3KS5MEODNS4")}\""
-        )
+        val properties =Properties()
+        val propertiesFile = project.rootProject.file("local.properties")
+
+        if (propertiesFile.exists()) {
+            propertiesFile.reader().use{ properties.load(it) }
+        }
+
+        val apiKey = properties.getProperty("OPEN_TRIP_MAP_API_KEY") ?: ""
+
+        // This creates the field in your Java/Kotlin code
+        buildConfigField("String", "OPEN_TRIP_MAP_API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
