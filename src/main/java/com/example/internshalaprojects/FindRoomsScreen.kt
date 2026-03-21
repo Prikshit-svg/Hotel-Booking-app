@@ -39,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -201,6 +202,13 @@ itemUiState.items.map { it.name }.distinct()
                     onDismissRequest = { expanded = false },
                     modifier = Modifier.fillMaxWidth(0.9f)
                 ) {
+                    DropdownMenuItem(
+                        text={OutlinedTextField(
+
+                            value = selectedCity,
+                            onValueChange = {selectedCity=it}
+                        )},onClick = { expanded = false }
+                    )
                     cityList.forEach { city ->
                         DropdownMenuItem(
                             text = { Text(city) },
@@ -330,8 +338,10 @@ itemUiState.items.map { it.name }.distinct()
                         shape = RoundedCornerShape(6.dp)
                     )
                     .clickable {
-                        Toast.makeText(context, "Search clicked", Toast.LENGTH_SHORT).show()
-                    },
+                       appViewModel.setSearchQuery(selectedCity)
+                        appViewModel.searchNearbyHotels(selectedCity)
+                        navController.navigate("home")
+                        },
                 contentAlignment = Alignment.Center
             ) {
                 Text(

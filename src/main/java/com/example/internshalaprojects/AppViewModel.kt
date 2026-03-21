@@ -1,11 +1,9 @@
 package com.example.internshalaprojects
 
-import android.app.Activity
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -18,13 +16,14 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.internshalaprojects.data.Internetitem
+
 import com.example.internshalaprojects.network.HotelApi
-import com.google.android.gms.tasks.OnCompleteListener
+import com.example.internshalaprojects.network.OpenTripMapApi
+import com.example.internshalaprojects.network.OtmProperties
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.Firebase
-import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseUser
@@ -41,6 +40,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.example.internshalaprojects.BuildConfig
 
 class AppViewModel : ViewModel() {
 
@@ -374,5 +374,64 @@ Signs into Firebase — converts the Google token into a Firebase credential and
     */
 
 
+
+    private val _hotelSearchState=MutableStateFlow<HotelSearchState>(HotelSearchState.Idle)
+    val hotelsSearchState:StateFlow<HotelSearchState> =_hotelSearchState.asStateFlow()
+
+    private val _hotels = MutableStateFlow<List<OtmProperties>>(emptyList())
+    val hotels: StateFlow<List<OtmProperties>> = _hotels.asStateFlow()
+
+    // Replace HotelSearchState Success:
+    sealed interface HotelSearchState {
+        object Idle : HotelSearchState
+        object Loading : HotelSearchState
+        object Empty : HotelSearchState
+        data class Success(val hotels: List<OtmProperties>) : HotelSearchState
+        data class Error(val message: String) : HotelSearchState
+    }
+
+    // Replace searchNearbyHotels function:
+    fun searchNearbyHotels(city: String) {
+        if (city.isBlank()) return
+
+        viewModelScope.launch {
+            _hotelSearchState.value = HotelSearchState.Loading
+            try {
+                // Step 1 — get coordinates
+                val geoResult = OpenTripMapApi.service.getCityCoordinates(
+                    cityName = city,
+                    apiKey = BuildConfig.OPEN_TRIP_MAP_API_KEY
+                )
+
+                // Step 2 — search hotels near those coordinates
+                val hotelResult = OpenTripMapApi.service.searchNearbyHotels(
+                    lat = geoResult.lat,
+                    lon = geoResult.lon,
+                    apiKey = BuildConfig.OPEN_TRIP_MAP_API_KEY
+                )
+
+                val hotels = hotelResult.features.map { it.properties }
+
+                if (hotels.isEmpty()) {
+                    _hotelSearchState.value = HotelSearchState.Empty
+                } else {
+                    _hotels.value = hotels
+                    _hotelSearchState.value = HotelSearchState.Success(hotels)
+                }
+
+            } catch (e: Exception) {
+                _hotelSearchState.value = HotelSearchState.Error(
+                    e.message ?: "Unknown error"
+                )
+                Log.e(TAG, "Hotel search failed: ${e.message}")
+            }
+        }
+    }
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
 
 }
