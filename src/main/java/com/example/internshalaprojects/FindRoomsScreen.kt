@@ -61,6 +61,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.internshalaprojects.database.HistoryEvent
+import com.example.internshalaprojects.database.HistoryState
 import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -71,13 +73,18 @@ import java.util.Locale
 fun FindRoomScreen(appViewModel : AppViewModel,
                    navController : NavController,
                    auth : FirebaseAuth,
-                   onClick : () -> Unit) {
+                   onClick : () -> Unit,
+                   onEvent : (HistoryEvent)-> Unit,
+                   state: HistoryState) {
 val itemUiState by appViewModel.itemUiState.collectAsState()
         FindRoomScreenContent(navController = navController,
             appViewModel,
             itemUiState,
             auth,
-            onClick)
+            onClick,
+            onEvent,
+            state
+            )
 
 
 }
@@ -89,8 +96,10 @@ fun FindRoomScreenContent(
     appViewModel : AppViewModel,
     itemUiState: AppViewModel.ItemUiState,
     auth : FirebaseAuth,
-    onClick :()->Unit
-) {
+    onClick :()->Unit,
+    onEvent : (HistoryEvent)-> Unit,
+    state: HistoryState
+    ) {
 
     val context = LocalContext.current
 
@@ -359,9 +368,7 @@ itemUiState.items.map { it.name }.distinct()
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            InternetItemScreen(appViewModel,
-                itemUiState
-            )
+           HistoryScreen(state = state, onEvent = onEvent)
         }
     }
 }

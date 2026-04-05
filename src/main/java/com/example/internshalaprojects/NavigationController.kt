@@ -9,6 +9,8 @@ import androidx.credentials.CredentialManager
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.internshalaprojects.database.HistoryEvent
+import com.example.internshalaprojects.database.HistoryState
 import com.example.internshalaprojects.otpScreens.LoginScreen
 import com.example.internshalaprojects.otpScreens.SignUpScreen
 import com.example.internshalaprojects.otpScreens.sendOTPScreen
@@ -16,7 +18,7 @@ import com.example.internshalaprojects.otpScreens.verifyOTPScreen
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun NavHostController(appViewModel : AppViewModel){
+fun NavHostController(appViewModel : AppViewModel,onEvent : (HistoryEvent)-> Unit,state: HistoryState){
 // Use your app or activity context to instantiate a client instance of
 // CredentialManager.
 
@@ -63,12 +65,14 @@ fun NavHostController(appViewModel : AppViewModel){
             appViewModel.setScreenTitle("Home")
             HomeScreen(appViewModel,{
                 navController.navigate("signup")
-            },navController,auth,user,context)
+            },navController,auth,user,context,onEvent)
         }
         composable("findroomscreen"){
             appViewModel.setScreenTitle("Find Room")
            FindRoomScreen(appViewModel,navController,auth,
-               {navController.navigate("signup")})
+               {navController.navigate("signup")},
+               onEvent,
+               state)
         }
         composable("sendotpscreen"){
             appViewModel.setScreenTitle("Sign Up")
@@ -81,5 +85,6 @@ fun NavHostController(appViewModel : AppViewModel){
             verifyOTPScreen(appViewModel,auth)
 
         }
+
     }
 }

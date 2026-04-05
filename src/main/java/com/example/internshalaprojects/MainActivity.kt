@@ -57,10 +57,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+
 import androidx.navigation.NavController
+import androidx.room.Room
 import com.example.internshalaprojects.data.Hotel
 import com.example.internshalaprojects.data.ListOfHotels
+import com.example.internshalaprojects.database.HistoryDatabase
+import com.example.internshalaprojects.database.HistoryEvent
 
 import com.example.internshalaprojects.network.OtmProperties
 import com.example.internshalaprojects.otpScreens.sendOTPScreen
@@ -68,6 +75,7 @@ import com.example.internshalaprojects.otpScreens.sendOTPScreen
 import com.example.internshalaprojects.ui.theme.InternshalaProjectsTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import kotlin.getValue
 
 
 class MainActivity : ComponentActivity() {
@@ -77,20 +85,38 @@ class MainActivity : ComponentActivity() {
              oneTapClient = Identity.getSignInClient(applicationContext)
          )
      }*/
+    val db by lazy {
+        Room.databaseBuilder(
+            applicationContext,
+            HistoryDatabase::class.java,
+            "history.db"
+        ).build()
+    }
+    val appViewModel by viewModels<AppViewModel>(
+        factoryProducer = {
+            object : ViewModelProvider.Factory{
+                override fun <T : ViewModel> create(modelClass : Class<T>) : T {
+                    return AppViewModel(db.dao) as T
+                }
+            }
+        }
+    )
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState : Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val appViewModel: AppViewModel by viewModels()
+
+
+
 
 
 
         setContent {
 
             InternshalaProjectsTheme {
-
-NavHostController(appViewModel)
+val state by appViewModel.state.collectAsState()
+NavHostController(appViewModel, onEvent = appViewModel:: onEvent ,state )
             }
         }
     }
@@ -110,7 +136,8 @@ navController : NavController,
 
     auth : FirebaseAuth,
     user : FirebaseUser?,
-    context: Context
+    context: Context,
+    onEvent : (HistoryEvent)-> Unit
 ) {
     val hotelSearchState by appViewModel.hotelsSearchState.collectAsState()
     val visible = appViewModel.isVisible.collectAsState()
@@ -211,7 +238,7 @@ navController : NavController,
                                 )
                             }
                             items(state.hotels.size) { hotel ->
-                                FoursquareHotelCard(state.hotels[hotel])
+                                FoursquareHotelCard(state.hotels[hotel],onEvent)
                             }
                         }
                         is AppViewModel.HotelSearchState.Loading -> {
@@ -357,10 +384,14 @@ Image(painterResource(R.drawable.logout),contentDescription = "Logout", modifier
 
 
 @Composable
-fun FoursquareHotelCard(hotel: OtmProperties) {
+fun FoursquareHotelCard(hotel: OtmProperties,onEvent : (HistoryEvent)-> Unit) {
    val context=LocalContext.current
     Card(
         onClick = {
+onEvent(HistoryEvent.SetName(hotel.name))
+val category=hotel.kinds?.split(",")?.firstOrNull() ?: "Hotel"
+            onEvent(HistoryEvent.SetCategory(category))
+            onEvent(HistoryEvent.SaveItem)
             val searchQuery=Uri.encode("${hotel.name} hotel official website")
             val intent= Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/search?q=$searchQuery"))
         context.startActivity(intent)

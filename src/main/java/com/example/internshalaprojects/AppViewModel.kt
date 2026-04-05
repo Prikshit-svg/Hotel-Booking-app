@@ -41,8 +41,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.example.internshalaprojects.BuildConfig
+import com.example.internshalaprojects.database.HistoryDatabase
+import com.example.internshalaprojects.database.HistoryEvent
+import com.example.internshalaprojects.database.HistoryState
+import com.example.internshalaprojects.database.SortType
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
-class AppViewModel : ViewModel() {
+class AppViewModel(private val _dao: HistoryItemDao) : ViewModel() {
 
     // Write a message to the database
     val database = Firebase.database
@@ -434,4 +444,83 @@ Signs into Firebase — converts the Google token into a Firebase credential and
         _searchQuery.value = query
     }
 
-}
+
+private val _sortType=MutableStateFlow(SortType.LAST_ADDED)
+    val sortType:StateFlow<SortType> =_sortType
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _historyItems=_sortType.flatMapLatest { sortType ->
+        when (sortType) {
+            SortType.FIRST_ADDED -> _dao.getAllItemsAccordingToFirstAdded()
+            SortType.LAST_ADDED -> _dao.getAllItemsAccordingToLastAdded()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(),emptyList())
+    private val _state=MutableStateFlow(HistoryState())
+    val state= combine(_state,_sortType,_historyItems){ state,sortType,historyItems ->
+        state.copy(
+            history = historyItems,
+            sortType = sortType
+        )
+
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HistoryState())
+
+    fun onEvent(event: HistoryEvent){
+
+            when (event) {
+                is HistoryEvent.DeleteItem -> {
+                    viewModelScope.launch {
+                        _dao.deleteItem(event.item)
+                    }
+                }
+
+                HistoryEvent.HideDialog ->{
+                    _state.update { it.copy(
+                        isDeletingItem = false
+                    ) }
+                }
+                HistoryEvent.SaveItem -> {
+                    val name=state.value.name
+                    val category=state.value.category
+                    if (name.isBlank() || category.isBlank()){
+                        return
+                    }
+                    val historyItem= HistoryItem(
+                        name=name,
+                        category=category
+
+                    )
+                    viewModelScope.launch {
+                        _dao.insertItem(historyItem)
+                    }
+
+                    _state.update {
+                        it.copy(
+                            name = "",     // Clear input fields
+                            category = "",
+                            isDeletingItem = false
+                        )
+                    }
+
+                }
+
+                is HistoryEvent.SortItems -> {
+                    _sortType.value=event.sortType
+                }
+
+                is HistoryEvent.SetName -> {
+                    _state.update { it.copy(name = event.name) }
+                }
+                is HistoryEvent.SetCategory -> {
+                    _state.update { it.copy(category = event.category) }
+                }
+
+                is HistoryEvent.ShowDialog -> {
+
+                    _state.update { it.copy(
+                        isDeletingItem = true,
+                        selectedItem = event.item
+                    ) }
+                }
+            }
+        }
+    }
+
