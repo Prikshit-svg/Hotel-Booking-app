@@ -85,6 +85,10 @@ fun NavHostController(appViewModel : AppViewModel,onEvent : (HistoryEvent)-> Uni
             verifyOTPScreen(appViewModel,auth)
 
         }
+        composable("faqscreen"){
+            appViewModel.setScreenTitle("FAQs")
+            FaqScreen()
+        }
 
     }
 }

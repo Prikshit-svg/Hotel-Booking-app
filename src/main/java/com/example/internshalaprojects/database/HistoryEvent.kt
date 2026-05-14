@@ -3,7 +3,7 @@ package com.example.internshalaprojects.database
 import com.example.internshalaprojects.HistoryItem
 
 sealed interface HistoryEvent {
-    object SaveItem : HistoryEvent
+    data class SaveItem(val name: String, val category: String) : HistoryEvent
     data class ShowDialog(val item: HistoryItem): HistoryEvent
     object HideDialog: HistoryEvent
     data class SortItems(val sortType: SortType): HistoryEvent

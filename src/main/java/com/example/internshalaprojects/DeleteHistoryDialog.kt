@@ -4,10 +4,8 @@ package com.example.internshalaprojects
 
 
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 
 import com.example.internshalaprojects.database.HistoryEvent
 import com.example.internshalaprojects.database.HistoryState
@@ -15,8 +13,7 @@ import com.example.internshalaprojects.database.HistoryState
 @Composable
 fun DeleteHistoryDialog(
     state : HistoryState,
-    onEvent:(HistoryEvent)-> Unit,
-    modifier : Modifier= Modifier
+    onEvent:(HistoryEvent)-> Unit
 ){
     AlertDialog(
         onDismissRequest = {

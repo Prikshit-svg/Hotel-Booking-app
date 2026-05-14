@@ -288,7 +288,7 @@ if (user!=null){
                     Log.w(TAG, "signInWithEmail:failure", task.exception)
                     Toast.makeText(
                         context,
-                        "Authentication failed.",
+                        "/*Authentication failed.*/",
                         Toast.LENGTH_SHORT,
                     ).show()
 
@@ -477,29 +477,18 @@ private val _sortType=MutableStateFlow(SortType.LAST_ADDED)
                         isDeletingItem = false
                     ) }
                 }
-                HistoryEvent.SaveItem -> {
-                    val name=state.value.name
-                    val category=state.value.category
-                    if (name.isBlank() || category.isBlank()){
-                        return
-                    }
-                    val historyItem= HistoryItem(
-                        name=name,
-                        category=category
-
+                is HistoryEvent.SaveItem -> {
+                    if (event.name.isBlank() || event.category.isBlank()) return
+                    val historyItem = HistoryItem(
+                        name = event.name,
+                        category = event.category
                     )
                     viewModelScope.launch {
                         _dao.insertItem(historyItem)
                     }
-
                     _state.update {
-                        it.copy(
-                            name = "",     // Clear input fields
-                            category = "",
-                            isDeletingItem = false
-                        )
+                        it.copy(name = "", category = "", isDeletingItem = false)
                     }
-
                 }
 
                 is HistoryEvent.SortItems -> {

@@ -1,5 +1,6 @@
 package com.example.internshalaprojects
 
+import com.example.internshalaprojects.R
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -57,6 +58,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.ViewModel
 
 import androidx.lifecycle.ViewModelProvider
@@ -104,13 +106,10 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState : Bundle?) {
+        setTheme(R.style.Theme_InternshalaProjects)
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
-
-
-
-
-
 
         setContent {
 
@@ -122,11 +121,7 @@ NavHostController(appViewModel, onEvent = appViewModel:: onEvent ,state )
     }
 }
 
-@Composable
-fun FAQScreen() {
-    LocalContext.current
 
-    }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -365,11 +360,7 @@ fun offerScreen(){
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun FAQScreenPreview() {
-    TopAppBar(appViewModel = viewModel(),{} )
-}
+
 @Composable
 fun TopAppBar(appViewModel : AppViewModel,onClick:()->Unit= {}){
     Row(Modifier
@@ -388,10 +379,10 @@ fun FoursquareHotelCard(hotel: OtmProperties,onEvent : (HistoryEvent)-> Unit) {
    val context=LocalContext.current
     Card(
         onClick = {
-onEvent(HistoryEvent.SetName(hotel.name))
+
 val category=hotel.kinds?.split(",")?.firstOrNull() ?: "Hotel"
-            onEvent(HistoryEvent.SetCategory(category))
-            onEvent(HistoryEvent.SaveItem)
+
+            onEvent(HistoryEvent.SaveItem(hotel.name, category))
             val searchQuery=Uri.encode("${hotel.name} hotel official website")
             val intent= Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/search?q=$searchQuery"))
         context.startActivity(intent)
@@ -476,3 +467,12 @@ val category=hotel.kinds?.split(",")?.firstOrNull() ?: "Hotel"
         }
     }
 }
+
+
+
+
+
+
+
+
+

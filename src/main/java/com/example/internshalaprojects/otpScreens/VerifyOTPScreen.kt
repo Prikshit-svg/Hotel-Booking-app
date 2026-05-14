@@ -187,10 +187,10 @@ fun verifyOTPScreen(
                             appViewModel.setIsLoading(true)
 
                             val options = newBuilder(auth)
-                                .setPhoneNumber("+91${phoneNumber}") // ✅ added + prefix
+                                .setPhoneNumber("+91${phoneNumber}") //  added + prefix
                                 .setTimeout(60L, TimeUnit.SECONDS)
-                                .setActivity(context.findActivity()) // ✅ safe Activity fetch
-                                .setCallbacks(resendCallbacks)       // ✅ stable callbacks
+                                .setActivity(context.findActivity()) //  safe Activity fetch
+                                .setCallbacks(resendCallbacks)       //  stable callbacks
                                 .build()
 
                             PhoneAuthProvider.verifyPhoneNumber(options)
