@@ -45,7 +45,7 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import java.util.concurrent.TimeUnit
 
-// Safe helper to get Activity from any Context
+// Safe helper to get Activity from any Context+
 fun Context.findActivity(): Activity {
     var context = this
     while (context is ContextWrapper) {

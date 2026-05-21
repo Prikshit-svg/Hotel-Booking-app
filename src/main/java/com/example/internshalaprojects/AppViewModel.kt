@@ -16,7 +16,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.internshalaprojects.data.Internetitem
-
+import com.example.internshalaprojects.database.HistoryEvent
+import com.example.internshalaprojects.database.HistoryState
+import com.example.internshalaprojects.database.SortType
 import com.example.internshalaprojects.network.HotelApi
 import com.example.internshalaprojects.network.OpenTripMapApi
 import com.example.internshalaprojects.network.OtmProperties
@@ -34,23 +36,18 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import com.example.internshalaprojects.BuildConfig
-import com.example.internshalaprojects.database.HistoryDatabase
-import com.example.internshalaprojects.database.HistoryEvent
-import com.example.internshalaprojects.database.HistoryState
-import com.example.internshalaprojects.database.SortType
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class AppViewModel(private val _dao: HistoryItemDao) : ViewModel() {
 

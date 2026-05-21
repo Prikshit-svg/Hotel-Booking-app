@@ -83,6 +83,9 @@ fun SignUpScreen(
               onNavigateToPhoneAuth()
 
             })
+        Text("""Signup using phone number is currently not available for this version due to some
+            insufficient credits.but it will be fully functional in the later versions.
+             Thanks Have a nice day!""".trimMargin())
 
     }
     }
