@@ -11,11 +11,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.internshalaprojects"
+    namespace = "com.example1.internshalaprojectsprdevscodes"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.internshalaprojects"
+        applicationId = "com.example1.internshalaprojectsprdevscodes"
         minSdk = 29
         targetSdk = 36
         versionCode = 1
@@ -108,4 +108,7 @@ dependencies {
 
     //splash screen
     implementation("androidx.core:core-splashscreen:1.0.1")
+
+    //Admob
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
 }
